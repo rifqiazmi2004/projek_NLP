@@ -12,6 +12,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 
 from googleapiclient.discovery import build
+from googletrans import Translator
 
 # ================== PREDICT SINGLE KOMEN ======================
 factory = StemmerFactory()
@@ -292,12 +293,15 @@ with st.form("Single Predict"):
     st.markdown('<h3 class="centered-label">Masukkan Kalimat</h3>', unsafe_allow_html=True)
     comment = st.text_input("", key="single_predict")
     state = st.form_submit_button("Predict")
+    translator = Translator()
 
     # Jika tombol ditekan dan input tidak kosong
     if state:
         if comment != '':
-            # st.write("Hallo")
-            processed_text=text_preprocessing(comment) 
+            comment_translate = translator.translate(comment, src='en', dest='id')
+            commentFix = comment_translate.text
+            st.write(commentFix)
+            processed_text=text_preprocessing(commentFix) 
             # st.write(processed_text)
             predict_text = predict(processed_text)
             print_result(predict_text)
@@ -318,6 +322,12 @@ with st.form("Link Predict"):
         if link != '':
             label_mapping = {0: "non-bullying", 1: "bullying"}
             df=get_comments(link)
+
+            for i in range (len(df)):
+                row=df['comment'].iloc[i]
+                trans = translator.translate(row, src='en', dest='id')
+                df["comment"].iloc[i] = trans.text
+
             data_jadi=process_data_comments(df)
             # st.dataframe(data)
             result=predict(data_jadi)
@@ -402,6 +412,7 @@ with st.form("Link Predict"):
                 </div>
             """, unsafe_allow_html=True)
             st.markdown('---')
+
             # ------------------- BARPLOT ---------------------------
 
             st.markdown("<h3 style='text-align:center;background-color:#47484a;border-radius:10px;margin-bottom:10px;'>Barplot</h3>",unsafe_allow_html=True)
@@ -417,6 +428,8 @@ with st.form("Link Predict"):
             # Menampilkan Grafik di Streamlit
             st.pyplot(fig)  
             st.markdown('---')
+
+            # --------------------- WORDCLOUD ------------------------------
 
             bullying_comments = ' '.join(df[df['hasil'] == 'bullying']['comment'])
             non_bullying_comments = ' '.join(df[df['hasil'] == 'non-bullying']['comment'])
